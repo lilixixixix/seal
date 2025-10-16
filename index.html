@@ -43,14 +43,69 @@
 
     <label>印章文字: <input id="sealText" value="什么什么有限公司"></label>
     <label>字体大小: <input id="fontSize" type="number" value="48"></label>
+    <label>字体粗细:
+        <select id="fontWeight">
+            <option value="normal">正常</option>
+            <option value="bold" selected>加粗</option>
+            <option value="bolder">更粗</option>
+            <option value="lighter">更细</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+            <option value="300">300</option>
+            <option value="400">400</option>
+            <option value="500">500</option>
+            <option value="600">600</option>
+            <option value="700">700</option>
+            <option value="800">800</option>
+            <option value="900">900</option>
+        </select>
+    </label>
+    <label>字体类型:
+        <select id="fontFamily">
+            <!-- 中文字体（Windows 常见） -->
+            <option value="SimSun" selected>宋体 (SimSun)</option>
+            <option value="SimHei">黑体 (SimHei)</option>
+            <option value="KaiTi">楷体 (KaiTi)</option>
+            <option value="FangSong">仿宋 (FangSong)</option>
+            <option value="Microsoft YaHei">微软雅黑 (Microsoft YaHei)</option>
+            <option value="STSong">华文宋体 (STSong)</option>
+            <option value="STHeiti">华文黑体 (STHeiti)</option>
+            <option value="STKaiti">华文楷体 (STKaiti)</option>
+            <option value="STFangsong">华文仿宋 (STFangsong)</option>
+
+            <!-- macOS 常见字体 -->
+            <option value="PingFang SC">苹方 (PingFang SC)</option>
+            <option value="Hiragino Sans GB">冬青黑体 (Hiragino Sans GB)</option>
+
+            <!-- Google 开源字体 -->
+            <option value="Noto Sans SC">思源黑体 (Noto Sans SC)</option>
+            <option value="Noto Serif SC">思源宋体 (Noto Serif SC)</option>
+
+            <!-- 英文字体 -->
+            <option value="Arial">Arial</option>
+            <option value="Arial Black">Arial Black</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Tahoma">Tahoma</option>
+            <option value="Trebuchet MS">Trebuchet MS</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Lucida Console">Lucida Console</option>
+            <option value="Impact">Impact</option>
+        </select>
+    </label>
     <label>文字颜色: <input id="fontColor" type="color" value="#ff0000"></label>
-    <label>文字半径: <input id="textRadius" type="number" value="120"></label><br>
+    <label>文字半径: <input id="textRadius" type="number" value="120"></label>
+    <br>
     <label>起始角度: <input id="startDeg" type="number" value="170"></label>
     <label>结束角度: <input id="endDeg" type="number" value="360"></label><br>
     <label>中心图案: <input id="centerChar" value="★"></label>
     <label>图案大小: <input id="starSize" type="number" value="130"></label><br>
     <label>圆线宽度: <input id="circleWidth" type="number" value="10"></label>
     <label>圆线颜色: <input id="circleColor" type="color" value="#ff0000"></label>
+    <br>
+    <label>开启下方小字: <input type="checkbox" id="enableSmallText" checked></label>
+    <label>小字文字: <input id="smallText" value="123456789"></label>
     <!-- 可选保留手动做旧 -->
     <br>
     <button onclick="applyVintageMask()">做旧</button>
@@ -70,7 +125,10 @@
 
             // 获取用户设置
             const sealText = document.getElementById("sealText").value.trim();
+            const smallText = document.getElementById("smallText").value.trim();
             const fontSize = parseInt(document.getElementById("fontSize").value);
+            const fontWeight = document.getElementById("fontWeight").value;
+            const fontFamily = document.getElementById("fontFamily").value;
             const fontColor = document.getElementById("fontColor").value;
             const textRadius = parseInt(document.getElementById("textRadius").value);
             const startDeg = parseFloat(document.getElementById("startDeg").value);
@@ -112,7 +170,7 @@
             // 绘制弧形文字
             ctx.save();
             ctx.translate(centerX, centerY);
-            ctx.font = `bold ${fontSize}px SimSun`;
+            ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
             ctx.fillStyle = fontColor;
 
             for (let i = 0; i < textLength; i++) {
@@ -129,6 +187,40 @@
                 ctx.restore();
             }
             ctx.restore();
+            // === 下方弧形小字 ===
+            const enableSmallText = document.getElementById("enableSmallText").checked; // ✅ 获取是否勾选
+            if (enableSmallText) {
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.font = `bold ${fontSize / 3}px SimSun`;
+                ctx.fillStyle = fontColor;
+
+                // const bottomText = "32312025-001";  // ✅ 建议使用独立的下方文字
+                const bottomChars = smallText.split("");
+                const bottomLength = bottomChars.length;
+
+                // 控制弧度范围（越小越集中）
+                const totalAngle2 = Math.PI * 0.5;  // 🔥 0.7π 代表 126° 弧长，可调节
+                const startAngle2 = Math.PI + totalAngle2 + 450;  // 从圆下方右侧开始
+                const angleStep2 = totalAngle2 / (bottomLength - 1);
+
+                for (let i = 0; i < bottomLength; i++) {
+                    const angle = startAngle2 - i * angleStep2;  // 🔄 注意这里是反方向
+                    const x = (textRadius + 20) * Math.cos(angle);
+                    const y = (textRadius + 20) * Math.sin(angle);
+
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(angle + Math.PI / 2);
+                    ctx.scale(-1, -1); // ✅ 翻转下方文字方向
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(bottomChars[i], 0, 0);
+                    ctx.restore();
+                }
+
+                ctx.restore();
+            }
         }
 
         function downloadSeal() {
