@@ -111,6 +111,8 @@
     <button onclick="applyVintageMask()">做旧</button>
     <button onclick="applySoftWornMaskOnSeal()">遮盖</button>
     <button onclick="smear()">拖影</button>
+    <span>➡️</span>
+    <button onclick="one()">一键</button>
 
     <br><br>
     <button onclick="drawSeal()">生成</button>
@@ -518,6 +520,14 @@
             }
 
             ctx.globalAlpha = 1;
+        }
+        //一键
+        function one(){
+            applyVintageMask();
+            applyVintageMask();
+            applySoftWornMaskOnSeal();
+            smear();
+            smear();
         }
 
         window.onload = drawSeal;
