@@ -117,8 +117,31 @@
     <br><br>
     <button onclick="drawSeal()">生成</button>
     <button onclick="downloadSeal()">下载</button>
+    <span>&nbsp;&nbsp;&nbsp;</span>
+    <button onclick="openConfigModal('export')">导出配置</button>
+    <button onclick="openConfigModal('import')">导入配置</button>
 
     <canvas id="sealCanvas" width="400" height="400"></canvas>
+
+    <!-- 配置弹窗 -->
+    <div id="configModal" style="
+  display: none; position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  justify-content: center; align-items: center;
+">
+        <div style="
+    background: #fff; padding: 20px;
+    border-radius: 10px; width: 400px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  ">
+            <h3 id="modalTitle">配置</h3>
+            <textarea id="configText" rows="10" style="width:100%;font-family:monospace;"></textarea>
+            <br><br>
+            <button id="confirmBtn">确定</button>
+            <button onclick="closeConfigModal()">关闭</button>
+        </div>
+    </div>
 
     <script>
         function drawSeal() {
@@ -139,6 +162,7 @@
             const starSize = parseInt(document.getElementById("starSize").value);
             const circleWidth = parseInt(document.getElementById("circleWidth").value);
             const circleColor = document.getElementById("circleColor").value;
+            const enableSmallText = document.getElementById("enableSmallText").checked; // ✅ 获取是否勾选小字
 
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
@@ -190,7 +214,6 @@
             }
             ctx.restore();
             // === 下方弧形小字 ===
-            const enableSmallText = document.getElementById("enableSmallText").checked; // ✅ 获取是否勾选
             if (enableSmallText) {
                 ctx.save();
                 ctx.translate(centerX, centerY);
@@ -522,7 +545,7 @@
             ctx.globalAlpha = 1;
         }
         //一键
-        function one(){
+        function one() {
             applyVintageMask();
             applyVintageMask();
             applySoftWornMaskOnSeal();
@@ -530,7 +553,101 @@
             smear();
         }
 
+        //加载成功生成图案
         window.onload = drawSeal;
+
+        /* 以下为配置的导出导入 */
+        let currentMode = ""; // 记录当前模式（导出/导入）
+
+        // 打开弹窗
+        function openConfigModal(mode) {
+            currentMode = mode; // 保存模式
+            const modal = document.getElementById("configModal");
+            const textArea = document.getElementById("configText");
+            const title = document.getElementById("modalTitle");
+            const confirmBtn = document.getElementById("confirmBtn");
+
+            // 清空文本框
+            textArea.value = "";
+
+            if (mode === "export") {
+                title.textContent = "导出配置";
+                confirmBtn.textContent = "复制";
+                // 获取当前配置并显示
+                textArea.value = JSON.stringify(getConfig(), null, 2);
+            } else {
+                title.textContent = "导入配置";
+                confirmBtn.textContent = "导入";
+            }
+
+            // 设置“确定”按钮行为
+            confirmBtn.onclick = function () {
+                if (mode === "export") {
+                    // 导出模式：复制文本
+                    textArea.select();
+                    document.execCommand("copy");
+                    alert("配置已复制！");
+                } else {
+                    // 导入模式：解析JSON并还原配置
+                    try {
+                        const cfg = JSON.parse(textArea.value);
+                        setConfig(cfg);
+                        alert("配置已导入！");
+                        drawSeal();
+                    } catch (e) {
+                        alert("配置格式错误！");
+                    }
+                }
+                closeConfigModal();
+            };
+
+            // 显示弹窗
+            modal.style.display = "flex";
+        }
+
+        // 关闭弹窗
+        function closeConfigModal() {
+            document.getElementById("configModal").style.display = "none";
+        }
+
+        // 获取当前配置（用于导出）
+        function getConfig() {
+            return {
+                sealText: document.getElementById("sealText").value.trim(),
+                smallText: document.getElementById("smallText").value.trim(),
+                fontSize: parseInt(document.getElementById("fontSize").value),
+                fontWeight: document.getElementById("fontWeight").value,
+                fontFamily: document.getElementById("fontFamily").value,
+                fontColor: document.getElementById("fontColor").value,
+                textRadius: parseInt(document.getElementById("textRadius").value),
+                startDeg: parseFloat(document.getElementById("startDeg").value),
+                endDeg: parseFloat(document.getElementById("endDeg").value),
+                centerChar: document.getElementById("centerChar").value,
+                starSize: parseInt(document.getElementById("starSize").value),
+                circleWidth: parseInt(document.getElementById("circleWidth").value),
+                circleColor: document.getElementById("circleColor").value,
+                enableSmallText: document.getElementById("enableSmallText").checked
+            };
+        }
+
+        // 设置配置（用于导入）
+        function setConfig(cfg) {
+            document.getElementById("sealText").value = cfg.sealText || "";
+            document.getElementById("smallText").value = cfg.smallText || "";
+            document.getElementById("fontSize").value = cfg.fontSize || 48;
+            document.getElementById("fontWeight").value = cfg.fontWeight || "normal";
+            document.getElementById("fontFamily").value = cfg.fontFamily || "SimSun";
+            document.getElementById("fontColor").value = cfg.fontColor || "#000000";
+            document.getElementById("textRadius").value = cfg.textRadius || 120;
+            document.getElementById("startDeg").value = cfg.startDeg || 180;
+            document.getElementById("endDeg").value = cfg.endDeg || 360;
+            document.getElementById("centerChar").value = cfg.centerChar || "★";
+            document.getElementById("starSize").value = cfg.starSize || 80;
+            document.getElementById("circleWidth").value = cfg.circleWidth || 4;
+            document.getElementById("circleColor").value = cfg.circleColor || "#000000";
+            document.getElementById("enableSmallText").checked = cfg.enableSmallText || false;
+        }
+
     </script>
 
 </body>
